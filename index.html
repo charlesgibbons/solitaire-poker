@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solitaire Poker</title>
+<title>Solitaire Poker - scoring across rows &amp; columns</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -84,7 +84,7 @@ body {
 .center {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
 .grid-and-scores {
@@ -164,13 +164,17 @@ body {
 .hand-wrap {
   background: #D0D0D0;
   border-radius: 16px;
-  padding: 14px 16px;
+  padding: 12px 8px;
   display: flex;
-  gap: 8px;
-  min-height: 128px;
+  gap: 6px;
+  width: 384px;
+  min-height: 116px;
   align-items: center;
   justify-content: center;
 }
+/* Hand cards are slightly smaller than grid cards so they fit in the tray */
+.hand-wrap .card { width: 66px; height: 92px; }
+.hand-wrap .card .cr-mid { font-size: 30px; }
 
 /* ── CARD ────────────────────────────────────────────────── */
 .card {
@@ -351,7 +355,7 @@ body {
   .col-score  { font-size: 8px; }
 
   /* Hand */
-  .hand-wrap { gap: 5px; padding: 10px 10px; min-height: 90px; }
+  .hand-wrap { gap: 5px; padding: 10px 10px; min-height: 90px; width: 266px; }
 
   /* Winnings: horizontal strip */
   .winnings-panel {
@@ -400,11 +404,8 @@ body {
 <body>
 
 <div class="header">
-  <div>
-    <div style="font-size:17px;font-weight:700;color:#fff;">Solitaire Poker <span class="date" id="dateDisplay"></span></div>
-    <div style="font-size:12px;font-weight:400;color:#BBCBE8;margin-top:3px;">
-      Poker scoring across rows &amp; columns — get the highest possible score for the cards dealt
-    </div>
+  <div style="font-size:17px;font-weight:700;color:#fff;">
+    Solitaire Poker <span style="font-weight:400;color:#BBCBE8;font-size:13px;">— scoring across rows &amp; columns</span>
   </div>
 </div>
 
@@ -449,7 +450,6 @@ body {
 
     <div class="w-label">MAX POSSIBLE</div>
     <div class="w-max" id="maxPossibleVal">£0</div>
-    <div class="w-sub">Best score with<br>your 25 cards</div>
     <div class="efficiency" id="efficiencyEl"></div>
   </div>
 
@@ -847,10 +847,6 @@ function cardEl(card, extra = '') {
 }
 
 function render() {
-  // Header date
-  document.getElementById('dateDisplay').textContent =
-    '· ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-
   // Grid
   const gridEl = document.getElementById('grid');
   gridEl.innerHTML = '';
@@ -974,6 +970,15 @@ function abbrev(n) {
 //  DRAG & DROP (Pointer Capture — reliable on all browsers)
 // ═══════════════════════════════════════════════════════════
 
+// Global drag state — ensures only one drag runs at a time and
+// any stale ghost is always reachable for emergency cleanup.
+let _dragLock  = false;
+let _liveGhost = null;
+
+function _killGhost() {
+  if (_liveGhost) { _liveGhost.remove(); _liveGhost = null; }
+}
+
 function makeGhost(el, e) {
   const rect  = el.getBoundingClientRect();
   const ghost = el.cloneNode(true);
@@ -1009,6 +1014,12 @@ function isLocked(slotIdx) {
 function initDrag(el, source) {
   el.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // Reject concurrent drags — prevents the double-ghost problem on multi-touch
+    // or rapid taps; also force-cleans any leftover ghost from a botched prior drag.
+    if (_dragLock) { _killGhost(); return; }
+    _dragLock = true;
+    _killGhost(); // belt-and-suspenders: clear any ghost that survived a prior drag
+
     e.preventDefault();
     el.setPointerCapture(e.pointerId);
 
@@ -1017,12 +1028,14 @@ function initDrag(el, source) {
 
     // Idempotent cleanup — safe to call multiple times
     function cleanup() {
+      _dragLock = false;
       el.removeEventListener('pointermove',        onMove);
       el.removeEventListener('pointerup',          onUp);
       el.removeEventListener('pointercancel',      onCancel);
       el.removeEventListener('lostpointercapture', onLost);
       clearHighlights();
-      if (ghost) { ghost.remove(); ghost = null; }
+      _killGhost();
+      ghost = null;
       el.style.opacity = '';
     }
 
@@ -1031,6 +1044,7 @@ function initDrag(el, source) {
         active = true;
         el.style.opacity = '0.2';
         ghost = makeGhost(el, ev);
+        _liveGhost = ghost; // register globally so it can always be killed
       }
       if (!active || !ghost) return;
 
@@ -1090,11 +1104,11 @@ function initDrag(el, source) {
       }
     }
 
-    // Fired on pointer cancel (e.g. touch scroll takes over)
+    // Fired when touch scroll or system gesture interrupts the drag
     function onCancel() { cleanup(); render(); }
 
-    // Safety net: fired when browser silently releases capture (e.g. mouse
-    // button released outside the window) — without this the ghost stays on screen
+    // Safety net: fires when the browser silently releases pointer capture
+    // (e.g. mouse button released outside the window, element removed from DOM)
     function onLost() { cleanup(); render(); }
 
     el.addEventListener('pointermove',        onMove);
