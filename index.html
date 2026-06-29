@@ -188,6 +188,13 @@ body {
 .card:hover    { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
 .card.selected { transform: translateY(-10px); box-shadow: 0 10px 24px rgba(0,0,0,0.22); border-color: currentColor; }
 .card.hint-card { box-shadow: 0 0 0 3px #F0B429, 0 4px 12px rgba(0,0,0,0.16); }
+.card { touch-action: none; cursor: grab; }
+.card:active { cursor: grabbing; }
+
+/* ── DRAG STATES ─────────────────────────────────────────── */
+.slot.drag-over         { background: #C8E0FF !important; box-shadow: 0 0 0 2.5px #2563EB !important; }
+.slot.drag-over-swap    { background: #FFF3CC !important; box-shadow: 0 0 0 2.5px #F0B429 !important; }
+.slot.drag-over-blocked { background: #FFD8D8 !important; box-shadow: 0 0 0 2.5px #EF4444 !important; }
 
 .card .cr-top { font-size: 13px; font-weight: 800; line-height: 1; }
 .card .cs-top { font-size: 11px; line-height: 1; margin-top: 1px; }
@@ -195,8 +202,8 @@ body {
 .card .cs-bot { font-size: 11px; line-height: 1; margin-top: 1px; transform: rotate(180deg); align-self: flex-end; }
 .card .cr-bot { font-size: 13px; font-weight: 800; line-height: 1; transform: rotate(180deg); align-self: flex-end; }
 
-.slot .card { cursor: default; pointer-events: none; }
-.slot .card:hover { transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.14); }
+.slot .card { cursor: grab; pointer-events: auto; }
+.slot .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
 
 /* ── BUTTONS ─────────────────────────────────────────────── */
 .btn-row { display: flex; gap: 10px; justify-content: center; }
@@ -781,13 +788,16 @@ function render() {
   document.getElementById('upcomingCount').textContent =
     remaining > 0 ? `${remaining} left` : 'Done';
 
-  // Hand
+  // Hand — onclick removed; clicks handled by drag engine (short tap = selectCard)
   const hw = document.getElementById('handWrap');
   hw.innerHTML = '';
   G.hand.forEach((card, i) => {
     const cls = [G.selected === i ? 'selected' : '', G.hint && G.hint.cardIdx === i ? 'hint-card' : ''].join(' ');
-    hw.innerHTML += `<div class="card-wrap" onclick="selectCard(${i})">${cardEl(card, cls)}</div>`;
+    hw.innerHTML += `<div class="card-wrap">${cardEl(card, cls)}</div>`;
   });
+
+  // Attach drag listeners after DOM is built
+  attachDragListeners();
 
   // Status + hint button
   const hintBtn = document.getElementById('hintBtn');
@@ -815,6 +825,146 @@ function abbrev(n) {
   return { 'Royal Flush':'Royal','Straight Flush':'Str Fl','Four of a Kind':'4OAK',
     'Full House':'FH','Flush':'Flush','Straight':'Str','Three of a Kind':'3OAK',
     'Two Pair':'2P','Pair':'Pair','High Card':'Hi' }[n] || n;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAG & DROP (Pointer Events — mouse + touch)
+// ═══════════════════════════════════════════════════════════
+
+let DRAG = null;
+
+function startDragWatch(e, source) {
+  DRAG = { source, startX: e.clientX, startY: e.clientY, active: false, ghost: null, originEl: null };
+  document.addEventListener('pointermove', onDragMove);
+  document.addEventListener('pointerup',   onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!DRAG) return;
+  const dx = e.clientX - DRAG.startX, dy = e.clientY - DRAG.startY;
+
+  // Activate drag once pointer moves > 5px
+  if (!DRAG.active && Math.hypot(dx, dy) > 5) {
+    DRAG.active = true;
+    createGhost(e);
+  }
+  if (!DRAG.active || !DRAG.ghost) return;
+
+  // Move ghost with pointer
+  const w = DRAG.ghost.offsetWidth, h = DRAG.ghost.offsetHeight;
+  DRAG.ghost.style.left = (e.clientX - w / 2) + 'px';
+  DRAG.ghost.style.top  = (e.clientY - h / 2) + 'px';
+
+  // Highlight target slot
+  const slotEl = slotUnderCursor(e);
+  document.querySelectorAll('.slot').forEach(s =>
+    s.classList.remove('drag-over', 'drag-over-swap', 'drag-over-blocked'));
+  if (slotEl) {
+    const idx = [...document.querySelectorAll('#grid .slot')].indexOf(slotEl);
+    if (DRAG.source.type === 'hand') {
+      slotEl.classList.add(G.grid[idx] ? 'drag-over-blocked' : 'drag-over');
+    } else {
+      slotEl.classList.add('drag-over-swap');
+    }
+  }
+}
+
+function onDragEnd(e) {
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup',   onDragEnd);
+  if (!DRAG) return;
+
+  document.querySelectorAll('.slot').forEach(s =>
+    s.classList.remove('drag-over', 'drag-over-swap', 'drag-over-blocked'));
+
+  const wasActive = DRAG.active;
+  const slotEl    = wasActive ? slotUnderCursor(e) : null;
+
+  // Clean up ghost + fade
+  if (DRAG.ghost)    DRAG.ghost.remove();
+  if (DRAG.originEl) DRAG.originEl.style.opacity = '';
+
+  const src = DRAG;
+  DRAG = null;
+
+  if (!wasActive) {
+    // Short tap → treat as click
+    if (src.source.type === 'hand') selectCard(src.source.index);
+    return;
+  }
+
+  if (!slotEl) { render(); return; } // dropped outside grid
+
+  const slots   = [...document.querySelectorAll('#grid .slot')];
+  const slotIdx = slots.indexOf(slotEl);
+
+  if (src.source.type === 'hand') {
+    if (!G.grid[slotIdx]) {
+      G.selected = src.source.index;
+      placeCard(slotIdx);
+    } else {
+      render(); // can't drop on occupied slot
+    }
+  } else {
+    // Grid → grid: swap (works for both empty and occupied targets)
+    const fromIdx = src.source.index;
+    if (fromIdx !== slotIdx) {
+      const temp        = G.grid[slotIdx];
+      G.grid[slotIdx]   = G.grid[fromIdx];
+      G.grid[fromIdx]   = temp;
+      recalcScores();
+    }
+    render();
+  }
+}
+
+function createGhost(e) {
+  const sourceEl = DRAG.source.type === 'hand'
+    ? document.querySelectorAll('#handWrap .card-wrap')[DRAG.source.index]?.querySelector('.card')
+    : document.querySelectorAll('#grid .slot')[DRAG.source.index]?.querySelector('.card');
+  if (!sourceEl) return;
+
+  DRAG.originEl = sourceEl;
+  sourceEl.style.opacity = '0.2';
+
+  const rect  = sourceEl.getBoundingClientRect();
+  const ghost = sourceEl.cloneNode(true);
+  ghost.style.cssText = `
+    position:fixed; pointer-events:none; z-index:1000;
+    width:${rect.width}px; height:${rect.height}px;
+    left:${e.clientX - rect.width/2}px; top:${e.clientY - rect.height/2}px;
+    opacity:0.92; transform:rotate(4deg) scale(1.1); transition:none;
+    border-radius:10px; box-shadow:0 14px 36px rgba(0,0,0,0.3);
+  `;
+  document.body.appendChild(ghost);
+  DRAG.ghost = ghost;
+}
+
+function slotUnderCursor(e) {
+  if (DRAG?.ghost) DRAG.ghost.style.visibility = 'hidden';
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (DRAG?.ghost) DRAG.ghost.style.visibility = '';
+  return el?.closest('.slot');
+}
+
+function attachDragListeners() {
+  // Hand cards — pointerdown starts drag; short tap = selectCard()
+  document.querySelectorAll('#handWrap .card-wrap').forEach((wrap, i) => {
+    wrap.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      startDragWatch(e, { type: 'hand', index: i });
+    });
+  });
+
+  // Grid cards — drag to move or swap
+  document.querySelectorAll('#grid .slot').forEach((slot, i) => {
+    if (!G.grid[i]) return;
+    slot.querySelector('.card')?.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      e.stopPropagation(); // prevent slot onclick
+      startDragWatch(e, { type: 'grid', index: i });
+    });
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
