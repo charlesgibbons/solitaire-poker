@@ -293,6 +293,104 @@ body {
 .best-col-scores { display: grid; grid-template-columns: repeat(5, 42px); gap: 3px; margin-top: 3px; margin-left: 0; }
 .bcs { text-align: center; font-size: 9px; font-weight: 600; color: #888; border-top: 2px solid transparent; padding-top: 2px; text-transform: uppercase; }
 .bcs.scored { border-top-color: #F0B429; color: #F0B429; }
+
+/* ── MOBILE ──────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .game-wrap {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 8px;
+    gap: 10px;
+  }
+
+  /* NEXT panel: horizontal strip */
+  .side-panel {
+    min-width: unset;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .upcoming-stack { flex-direction: row; gap: 4px; }
+  .upcoming-mini  { width: 40px; height: 56px; }
+  .upcoming-mini .um-rank { font-size: 9px; }
+  .upcoming-mini .um-mid  { font-size: 16px; }
+  .upcoming-count { display: none; }
+
+  /* Smaller grid */
+  .grid {
+    grid-template-columns: repeat(5, 50px);
+    grid-template-rows:    repeat(5, 70px);
+    gap: 4px;
+  }
+  .slot { width: 50px; height: 70px; border-radius: 8px; }
+  .slot .plus { font-size: 17px; }
+
+  /* Smaller cards */
+  .card {
+    width: 50px; height: 70px;
+    border-radius: 8px; padding: 4px 5px;
+  }
+  .card .cr-top { font-size: 11px; }
+  .card .cs-top { font-size: 9px; }
+  .card .cr-mid { font-size: 24px; }
+  .card .cs-bot { font-size: 9px; }
+  .card .cr-bot { font-size: 11px; }
+
+  /* Row / col scores */
+  .row-scores { grid-template-rows: repeat(5, 70px); gap: 4px; }
+  .row-score  { min-width: 58px; padding-left: 6px; }
+  .row-score .rs-val  { font-size: 11px; }
+  .row-score .rs-name { font-size: 8px; }
+  .col-scores { grid-template-columns: repeat(5, 50px); gap: 4px; }
+  .col-score  { font-size: 8px; }
+
+  /* Hand */
+  .hand-wrap { gap: 5px; padding: 10px 10px; min-height: 90px; }
+
+  /* Winnings: horizontal strip */
+  .winnings-panel {
+    min-width: unset; width: 100%;
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: space-around;
+    background: white; border-radius: 12px;
+    padding: 10px 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    padding-top: 4px;
+  }
+  .w-divider { width: 1px; height: 36px; margin: 0; }
+  .w-val { font-size: 22px; }
+  .w-max { font-size: 18px; }
+  .w-sub { font-size: 10px; }
+  .efficiency { font-size: 11px; margin-top: 2px; }
+
+  /* Buttons */
+  .btn { padding: 9px 16px; font-size: 12px; }
+
+  /* Overlay */
+  .overlay { padding: 12px 10px; align-items: flex-start; }
+  .overlay-box { padding: 20px 16px; min-width: unset; border-radius: 14px; }
+  .overlay-box h2 { font-size: 22px; }
+  .overlay-box .big { font-size: 38px; }
+
+  /* Best deployment mini-grid */
+  .best-grid {
+    grid-template-columns: repeat(5, 32px);
+    grid-template-rows:    repeat(5, 44px);
+    gap: 2px;
+  }
+  .mini-card { width: 32px; height: 44px; padding: 2px 3px; border-radius: 4px; }
+  .mini-card .mc-top  { font-size: 8px; }
+  .mini-card .mc-suit { font-size: 7px; }
+  .mini-card .mc-mid  { font-size: 14px; }
+  .best-row-scores { grid-template-rows: repeat(5, 44px); gap: 2px; }
+  .best-col-scores { grid-template-columns: repeat(5, 32px); gap: 2px; }
+  .brs { min-width: 46px; }
+  .brs .bv { font-size: 10px; }
+  .brs .bn { font-size: 7px; }
+  .bcs { font-size: 7px; }
+}
 </style>
 </head>
 <body>
