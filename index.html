@@ -131,9 +131,11 @@ body {
   line-height: 1.35;
   min-width: 90px;
 }
-.row-score.scored { border-left-color: #F0B429; }
+.row-score.scored  { border-left-color: #F0B429; }
+.row-score.partial { border-left-color: #C8C8C8; }
 .row-score .rs-val  { font-size: 15px; font-weight: 700; color: #F0B429; }
 .row-score .rs-name { font-size: 10px; font-weight: 600; color: #666; letter-spacing: 0.05em; text-transform: uppercase; }
+.row-score .rs-partial { color: #AAAAAA !important; }
 
 /* ── COL SCORES ──────────────────────────────────────────── */
 .col-scores {
@@ -151,7 +153,8 @@ body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.col-score.scored { border-top-color: #F0B429; color: #F0B429; }
+.col-score.scored   { border-top-color: #F0B429; color: #F0B429; }
+.col-score.col-partial { border-top-color: #C8C8C8; color: #AAAAAA; }
 
 /* ── STATUS ──────────────────────────────────────────────── */
 .status-bar { font-size: 12px; color: #666; text-align: center; min-height: 18px; }
@@ -332,11 +335,12 @@ body {
     width: 50px; height: 70px;
     border-radius: 8px; padding: 4px 5px;
   }
-  .card .cr-top { font-size: 11px; }
-  .card .cs-top { font-size: 9px; }
-  .card .cr-mid { font-size: 24px; }
-  .card .cs-bot { font-size: 9px; }
-  .card .cr-bot { font-size: 11px; }
+  /* Hide small suit labels — centre symbol already shows suit */
+  .card .cs-top { display: none; }
+  .card .cs-bot { display: none; }
+  .card .cr-top { font-size: 12px; }
+  .card .cr-mid { font-size: 22px; }
+  .card .cr-bot { font-size: 12px; }
 
   /* Row / col scores */
   .row-scores { grid-template-rows: repeat(5, 70px); gap: 4px; }
@@ -507,6 +511,8 @@ function freshState() {
     selected:   null,
     rowEval:    Array(5).fill(null),
     colEval:    Array(5).fill(null),
+    rowLive:    Array(5).fill(null),
+    colLive:    Array(5).fill(null),
     totalScore: 0,
     maxPossible,
     turn:       0,
@@ -541,6 +547,21 @@ function shuffle(arr) {
 //  POKER EVALUATION
 // ═══════════════════════════════════════════════════════════
 
+// Partial eval for incomplete rows/columns (rank-based only, marked partial:true)
+function evalPartialHand(cards) {
+  const present = cards.filter(Boolean);
+  if (present.length < 2) return null;
+  const cnt = {};
+  present.forEach(c => cnt[c.val] = (cnt[c.val]||0)+1);
+  const grp = Object.values(cnt).sort((a,b)=>b-a);
+  if (grp[0]===4)                return { name:'Four of a Kind', payout:250, partial:true };
+  if (grp[0]===3 && grp[1]===2) return { name:'Full House',     payout:150, partial:true };
+  if (grp[0]===3)                return { name:'Three of a Kind',payout:30,  partial:true };
+  if (grp[0]===2 && grp[1]===2) return { name:'Two Pair',       payout:20,  partial:true };
+  if (grp[0]===2)                return { name:'Pair',           payout:10,  partial:true };
+  return null;
+}
+
 function evalHand(cards) {
   if (!cards || cards.some(c => !c) || cards.length !== 5) return null;
   const vals  = cards.map(c => c.val).sort((a,b) => a-b);
@@ -573,10 +594,13 @@ function recalcScores() {
   for (let r = 0; r < 5; r++) {
     G.rowEval[r] = evalHand(rowCards(r));
     if (G.rowEval[r]) total += G.rowEval[r].payout;
+    // Live partial eval shown when row not yet complete
+    G.rowLive[r] = G.rowEval[r] || evalPartialHand(rowCards(r));
   }
   for (let c = 0; c < 5; c++) {
     G.colEval[c] = evalHand(colCards(c));
     if (G.colEval[c]) total += G.colEval[c].payout;
+    G.colLive[c] = G.colEval[c] || evalPartialHand(colCards(c));
   }
   G.totalScore = total;
 }
@@ -845,13 +869,20 @@ function render() {
   const rsEl = document.getElementById('rowScores');
   rsEl.innerHTML = '';
   for (let r = 0; r < 5; r++) {
-    const e = G.rowEval[r];
-    if (e && e.payout > 0) {
+    const final   = G.rowEval[r];
+    const live    = G.rowLive[r];
+    if (final && final.payout > 0) {
+      // Complete row — gold
       rsEl.innerHTML += `<div class="row-score scored">
-        <div class="rs-val">£${e.payout}</div>
-        <div class="rs-name">${e.name}</div></div>`;
+        <div class="rs-val">£${final.payout}</div>
+        <div class="rs-name">${final.name}</div></div>`;
+    } else if (live && live.partial && live.payout > 0) {
+      // Partial row — grey preview
+      rsEl.innerHTML += `<div class="row-score partial">
+        <div class="rs-val rs-partial">£${live.payout}</div>
+        <div class="rs-name rs-partial">${live.name}</div></div>`;
     } else {
-      rsEl.innerHTML += `<div class="row-score">${e ? '<div class="rs-name" style="color:#ccc">—</div>' : ''}</div>`;
+      rsEl.innerHTML += `<div class="row-score"></div>`;
     }
   }
 
@@ -859,10 +890,15 @@ function render() {
   const csEl = document.getElementById('colScores');
   csEl.innerHTML = '';
   for (let c = 0; c < 5; c++) {
-    const e = G.colEval[c];
-    csEl.innerHTML += e && e.payout > 0
-      ? `<div class="col-score scored">£${e.payout}<br>${abbrev(e.name)}</div>`
-      : `<div class="col-score"></div>`;
+    const final = G.colEval[c];
+    const live  = G.colLive[c];
+    if (final && final.payout > 0) {
+      csEl.innerHTML += `<div class="col-score scored">£${final.payout}<br>${abbrev(final.name)}</div>`;
+    } else if (live && live.partial && live.payout > 0) {
+      csEl.innerHTML += `<div class="col-score col-partial">${abbrev(live.name)}</div>`;
+    } else {
+      csEl.innerHTML += `<div class="col-score"></div>`;
+    }
   }
 
   // Winnings
@@ -974,10 +1010,21 @@ function initDrag(el, source) {
   el.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
-    el.setPointerCapture(e.pointerId);   // key: browser routes ALL pointer events here
+    el.setPointerCapture(e.pointerId);
 
     const startX = e.clientX, startY = e.clientY;
     let active = false, ghost = null;
+
+    // Idempotent cleanup — safe to call multiple times
+    function cleanup() {
+      el.removeEventListener('pointermove',        onMove);
+      el.removeEventListener('pointerup',          onUp);
+      el.removeEventListener('pointercancel',      onCancel);
+      el.removeEventListener('lostpointercapture', onLost);
+      clearHighlights();
+      if (ghost) { ghost.remove(); ghost = null; }
+      el.style.opacity = '';
+    }
 
     function onMove(ev) {
       if (!active && Math.hypot(ev.clientX - startX, ev.clientY - startY) > 5) {
@@ -1003,19 +1050,13 @@ function initDrag(el, source) {
     }
 
     function onUp(ev) {
-      el.removeEventListener('pointermove',   onMove);
-      el.removeEventListener('pointerup',     onUp);
-      el.removeEventListener('pointercancel', onUp);
-      clearHighlights();
-
+      // Capture drop target before cleanup removes the ghost
       let targetSlot = null;
-      if (active && ghost) {
-        targetSlot = slotAt(ev.clientX, ev.clientY, ghost);
-        ghost.remove();
-      }
-      el.style.opacity = '';
+      if (active && ghost) targetSlot = slotAt(ev.clientX, ev.clientY, ghost);
+      const wasActive = active;
+      cleanup();
 
-      if (!active) {
+      if (!wasActive) {
         // Short tap — treat as click
         if (source.type === 'hand') selectCard(source.index);
         return;
@@ -1034,25 +1075,32 @@ function initDrag(el, source) {
           render();
         }
       } else {
-        // Grid → grid: move (empty target) or swap (occupied target)
-        // Respect lock: don't move cards out of locked rows/cols
+        // Grid → grid swap/move — respect locks
         const from = source.index;
         if (from !== slotIdx && !isLocked(from) && !isLocked(slotIdx)) {
           const tmp           = G.grid[slotIdx];
           G.grid[slotIdx]     = G.grid[from];
           G.grid[from]        = tmp;
-          const tmpT             = G.gridTurn[slotIdx];
-          G.gridTurn[slotIdx]    = G.gridTurn[from];
-          G.gridTurn[from]       = tmpT;
+          const tmpT          = G.gridTurn[slotIdx];
+          G.gridTurn[slotIdx] = G.gridTurn[from];
+          G.gridTurn[from]    = tmpT;
           recalcScores();
         }
         render();
       }
     }
 
-    el.addEventListener('pointermove',   onMove);
-    el.addEventListener('pointerup',     onUp);
-    el.addEventListener('pointercancel', onUp);
+    // Fired on pointer cancel (e.g. touch scroll takes over)
+    function onCancel() { cleanup(); render(); }
+
+    // Safety net: fired when browser silently releases capture (e.g. mouse
+    // button released outside the window) — without this the ghost stays on screen
+    function onLost() { cleanup(); render(); }
+
+    el.addEventListener('pointermove',        onMove);
+    el.addEventListener('pointerup',          onUp);
+    el.addEventListener('pointercancel',      onCancel);
+    el.addEventListener('lostpointercapture', onLost);
   });
 }
 
