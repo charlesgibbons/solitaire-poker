@@ -354,24 +354,33 @@ body {
   .col-scores { grid-template-columns: repeat(5, 50px); gap: 4px; }
   .col-score  { font-size: 8px; }
 
-  /* Hand */
-  .hand-wrap { gap: 5px; padding: 10px 10px; min-height: 90px; width: 266px; }
+  /* Hand — override the desktop .hand-wrap .card rule */
+  .hand-wrap { gap: 5px; padding: 10px 8px; min-height: 80px; width: 274px; }
+  .hand-wrap .card { width: 44px; height: 62px; border-radius: 6px; padding: 3px 4px; }
+  .hand-wrap .card .cr-top { font-size: 10px; }
+  .hand-wrap .card .cr-mid { font-size: 16px; }
+  .hand-wrap .card .cr-bot { font-size: 10px; }
 
-  /* Winnings: horizontal strip */
+  /* Winnings: two grouped sections side by side */
   .winnings-panel {
     min-width: unset; width: 100%;
     display: flex; flex-direction: row;
-    align-items: center; justify-content: space-around;
+    align-items: stretch; justify-content: space-around;
     background: white; border-radius: 12px;
-    padding: 10px 16px;
+    padding: 10px 12px;
     box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-    padding-top: 4px;
+    gap: 8px;
   }
-  .w-divider { width: 1px; height: 36px; margin: 0; }
-  .w-val { font-size: 22px; }
-  .w-max { font-size: 18px; }
-  .w-sub { font-size: 10px; }
-  .efficiency { font-size: 11px; margin-top: 2px; }
+  .w-section {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    flex: 1;
+  }
+  .w-divider { width: 1px; min-height: 50px; margin: 0; background: #D4D4D4; }
+  .w-val { font-size: 20px; }
+  .w-max { font-size: 16px; }
+  .w-sub { font-size: 10px; text-align: center; margin-top: 2px; }
+  .efficiency { font-size: 10px; margin-top: 4px; }
 
   /* Buttons */
   .btn { padding: 9px 16px; font-size: 12px; }
@@ -442,15 +451,19 @@ body {
 
   <!-- RIGHT: Score -->
   <div class="winnings-panel">
-    <div class="w-label">WINNINGS</div>
-    <div class="w-val" id="winningsVal">£0</div>
-    <div class="w-sub" id="turnInfo"></div>
+    <div class="w-section">
+      <div class="w-label">WINNINGS</div>
+      <div class="w-val" id="winningsVal">£0</div>
+      <div class="w-sub" id="turnInfo"></div>
+    </div>
 
     <div class="w-divider"></div>
 
-    <div class="w-label">MAX POSSIBLE</div>
-    <div class="w-max" id="maxPossibleVal">£0</div>
-    <div class="efficiency" id="efficiencyEl"></div>
+    <div class="w-section">
+      <div class="w-label">MAX POSSIBLE</div>
+      <div class="w-max" id="maxPossibleVal">£0</div>
+      <div class="efficiency" id="efficiencyEl"></div>
+    </div>
   </div>
 
 </div>
