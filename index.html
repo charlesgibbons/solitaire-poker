@@ -72,14 +72,12 @@ body {
   opacity: 0.55;
   flex-shrink: 0;
 }
-.upcoming-mini .um-rank     { font-size: 11px; font-weight: 800; line-height: 1; }
-.upcoming-mini .um-suit     { font-size: 9px;  line-height: 1; margin-top: 1px; }
+.upcoming-mini .um-rank     { font-size: 13px; font-weight: 800; line-height: 1; }
 .upcoming-mini .um-mid      {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 800; line-height: 1;
+  font-size: 18px; font-weight: 800; line-height: 1;
 }
-.upcoming-mini .um-suit-bot { font-size: 9px;  line-height: 1; margin-bottom: 1px; transform: rotate(180deg); align-self: flex-end; }
-.upcoming-mini .um-rank-bot { font-size: 11px; font-weight: 800; line-height: 1;   transform: rotate(180deg); align-self: flex-end; }
+.upcoming-mini .um-rank-bot { font-size: 13px; font-weight: 800; line-height: 1; transform: rotate(180deg); align-self: flex-end; }
 .upcoming-count { font-size: 11px; color: #999; margin-top: 2px; }
 
 /* ── CENTER ──────────────────────────────────────────────── */
@@ -176,7 +174,7 @@ body {
 }
 /* Hand cards are slightly smaller than grid cards so they fit in the tray */
 .hand-wrap .card { width: 66px; height: 92px; }
-.hand-wrap .card .cr-mid { font-size: 30px; }
+.hand-wrap .card .cr-mid { font-size: 24px; }
 
 /* ── CARD ────────────────────────────────────────────────── */
 .card {
@@ -208,11 +206,9 @@ body {
 .slot.drag-over-swap    { background: #FFF3CC !important; box-shadow: 0 0 0 2.5px #F0B429 !important; }
 .slot.drag-over-blocked { background: #FFD8D8 !important; box-shadow: 0 0 0 2.5px #EF4444 !important; }
 
-.card .cr-top { font-size: 13px; font-weight: 800; line-height: 1; }
-.card .cs-top { font-size: 11px; line-height: 1; margin-top: 1px; }
-.card .cr-mid { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800; line-height: 1; }
-.card .cs-bot { font-size: 11px; line-height: 1; margin-top: 1px; transform: rotate(180deg); align-self: flex-end; }
-.card .cr-bot { font-size: 13px; font-weight: 800; line-height: 1; transform: rotate(180deg); align-self: flex-end; }
+.card .cr-top { font-size: 15px; font-weight: 800; line-height: 1; }
+.card .cr-mid { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; line-height: 1; }
+.card .cr-bot { font-size: 15px; font-weight: 800; line-height: 1; transform: rotate(180deg); align-self: flex-end; }
 
 .slot .card { cursor: grab; pointer-events: auto; }
 .slot .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
@@ -323,11 +319,9 @@ body {
   }
   .upcoming-stack { flex-direction: row; gap: 4px; }
   .upcoming-mini  { width: 40px; height: 56px; }
-  .upcoming-mini .um-rank     { font-size: 9px; }
-  .upcoming-mini .um-suit     { font-size: 7px; }
-  .upcoming-mini .um-mid      { font-size: 14px; }
-  .upcoming-mini .um-suit-bot { font-size: 7px; }
-  .upcoming-mini .um-rank-bot { font-size: 9px; }
+  .upcoming-mini .um-rank     { font-size: 10px; }
+  .upcoming-mini .um-mid      { font-size: 12px; }
+  .upcoming-mini .um-rank-bot { font-size: 10px; }
   .upcoming-count { display: none; }
 
   /* Smaller grid */
@@ -344,12 +338,9 @@ body {
     width: 50px; height: 70px;
     border-radius: 8px; padding: 4px 5px;
   }
-  /* Hide small suit labels — centre symbol already shows suit */
-  .card .cs-top { display: none; }
-  .card .cs-bot { display: none; }
-  .card .cr-top { font-size: 12px; }
-  .card .cr-mid { font-size: 22px; }
-  .card .cr-bot { font-size: 12px; }
+  .card .cr-top { font-size: 13px; }
+  .card .cr-mid { font-size: 18px; }
+  .card .cr-bot { font-size: 13px; }
 
   /* Row / col scores */
   .row-scores { grid-template-rows: repeat(5, 70px); gap: 4px; }
@@ -362,9 +353,9 @@ body {
   /* Hand — override the desktop .hand-wrap .card rule */
   .hand-wrap { gap: 5px; padding: 10px 8px; min-height: 80px; width: 274px; }
   .hand-wrap .card { width: 44px; height: 62px; border-radius: 6px; padding: 3px 4px; }
-  .hand-wrap .card .cr-top { font-size: 10px; }
-  .hand-wrap .card .cr-mid { font-size: 22px; }  /* large enough to read clearly */
-  .hand-wrap .card .cr-bot { font-size: 10px; }
+  .hand-wrap .card .cr-top { font-size: 11px; }
+  .hand-wrap .card .cr-mid { font-size: 18px; }
+  .hand-wrap .card .cr-bot { font-size: 11px; }
 
   /* Winnings: two grouped sections side by side */
   .winnings-panel {
@@ -857,9 +848,7 @@ function endGame() {
 function cardEl(card, extra = '') {
   return `<div class="card ${extra}" style="color:${card.color}">
     <div class="cr-top">${card.rank}</div>
-    <div class="cs-top">${card.suit}</div>
-    <div class="cr-mid">${card.rank}</div>
-    <div class="cs-bot">${card.suit}</div>
+    <div class="cr-mid">${card.suit}</div>
     <div class="cr-bot">${card.rank}</div>
   </div>`;
 }
@@ -937,9 +926,7 @@ function render() {
   upcoming.forEach(card => {
     upEl.innerHTML += `<div class="upcoming-mini" style="color:${card.color}">
       <div class="um-rank">${card.rank}</div>
-      <div class="um-suit">${card.suit}</div>
       <div class="um-mid">${card.suit}</div>
-      <div class="um-suit-bot">${card.suit}</div>
       <div class="um-rank-bot">${card.rank}</div>
     </div>`;
   });
