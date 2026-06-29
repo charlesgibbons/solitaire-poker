@@ -72,12 +72,14 @@ body {
   opacity: 0.55;
   flex-shrink: 0;
 }
-.upcoming-mini .um-rank { font-size: 11px; font-weight: 800; line-height: 1; }
-.upcoming-mini .um-suit { font-size: 9px; line-height: 1; margin-top: 1px; }
-.upcoming-mini .um-mid  {
+.upcoming-mini .um-rank     { font-size: 11px; font-weight: 800; line-height: 1; }
+.upcoming-mini .um-suit     { font-size: 9px;  line-height: 1; margin-top: 1px; }
+.upcoming-mini .um-mid      {
   flex: 1; display: flex; align-items: center; justify-content: center;
   font-size: 22px; font-weight: 800; line-height: 1;
 }
+.upcoming-mini .um-suit-bot { font-size: 9px;  line-height: 1; margin-bottom: 1px; transform: rotate(180deg); align-self: flex-end; }
+.upcoming-mini .um-rank-bot { font-size: 11px; font-weight: 800; line-height: 1;   transform: rotate(180deg); align-self: flex-end; }
 .upcoming-count { font-size: 11px; color: #999; margin-top: 2px; }
 
 /* ── CENTER ──────────────────────────────────────────────── */
@@ -321,8 +323,11 @@ body {
   }
   .upcoming-stack { flex-direction: row; gap: 4px; }
   .upcoming-mini  { width: 40px; height: 56px; }
-  .upcoming-mini .um-rank { font-size: 9px; }
-  .upcoming-mini .um-mid  { font-size: 16px; }
+  .upcoming-mini .um-rank     { font-size: 9px; }
+  .upcoming-mini .um-suit     { font-size: 7px; }
+  .upcoming-mini .um-mid      { font-size: 14px; }
+  .upcoming-mini .um-suit-bot { font-size: 7px; }
+  .upcoming-mini .um-rank-bot { font-size: 9px; }
   .upcoming-count { display: none; }
 
   /* Smaller grid */
@@ -358,7 +363,7 @@ body {
   .hand-wrap { gap: 5px; padding: 10px 8px; min-height: 80px; width: 274px; }
   .hand-wrap .card { width: 44px; height: 62px; border-radius: 6px; padding: 3px 4px; }
   .hand-wrap .card .cr-top { font-size: 10px; }
-  .hand-wrap .card .cr-mid { font-size: 16px; }
+  .hand-wrap .card .cr-mid { font-size: 22px; }  /* large enough to read clearly */
   .hand-wrap .card .cr-bot { font-size: 10px; }
 
   /* Winnings: two grouped sections side by side */
@@ -498,10 +503,10 @@ body {
 // ═══════════════════════════════════════════════════════════
 
 const SUITS = [
-  { sym: '♠', color: '#2563EB' },
-  { sym: '♥', color: '#EF4444' },
-  { sym: '♦', color: '#F97316' },
-  { sym: '♣', color: '#16A34A' },
+  { sym: '♠', color: '#111111' },
+  { sym: '♥', color: '#E02020' },
+  { sym: '♦', color: '#E02020' },
+  { sym: '♣', color: '#111111' },
 ];
 const RANKS   = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const RANK_VAL = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
@@ -933,7 +938,9 @@ function render() {
     upEl.innerHTML += `<div class="upcoming-mini" style="color:${card.color}">
       <div class="um-rank">${card.rank}</div>
       <div class="um-suit">${card.suit}</div>
-      <div class="um-mid">${card.rank}</div>
+      <div class="um-mid">${card.suit}</div>
+      <div class="um-suit-bot">${card.suit}</div>
+      <div class="um-rank-bot">${card.rank}</div>
     </div>`;
   });
   const remaining = G.preDealt.length - nextStart;
